@@ -9,7 +9,7 @@ import base64
 import os
 import time
 
-from wechaty import Contact, Wechaty
+from wechaty import Contact, Wechaty, Friendship, FriendshipType
 from wechaty.user import Message
 from wechaty_puppet import FileBox
 
@@ -47,6 +47,7 @@ class WechatyChannel(ChatChannel):
         self.handler_pool._initializer = lambda: asyncio.set_event_loop(loop)
         self.bot = Wechaty()
         self.bot.on("login", self.on_login)
+        self.bot.on("friendship", self.on_friendship)
         self.bot.on("message", self.on_message)
         await self.bot.start()
 
@@ -54,6 +55,18 @@ class WechatyChannel(ChatChannel):
         self.user_id = contact.contact_id
         self.name = contact.name
         logger.info("[WX] login user={}".format(contact))
+
+    async def on_friendship(self, friendship: Friendship):
+        contact = friendship.contact()
+        contact_card = self.bot.Contact.load("Da1Zh0nggu0")
+        logger.info("[WX] friendship contact_card={}".format(contact_card))
+        await contact.ready()
+        if friendship.type() == FriendshipType.FRIENDSHIP_TYPE_RECEIVE:
+            await friendship.accept()
+            await asyncio.sleep(3)
+            await contact.say('''你好呀～我是nova～是星言科技创始人戴中国先生的智能助理～ \n在这里，你可以尽情向我询问关于星言科技的一切或与我随意进行聊天与互动～ \n例如对我说“做一下自我介绍
+吧～”或其他任何问题，我都尽我所能进行回答！\n当然，你也可以直接添加我们创始人的微信，申请成为新言科技【超新星对话云】首批种子用户！''')
+            await contact.say(contact_card)
 
     # 统一的发送函数，每个Channel自行实现，根据reply的type字段发送不同类型的消息
     def send(self, reply: Reply, context: Context):
